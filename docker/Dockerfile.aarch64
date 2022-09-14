@@ -1,0 +1,23 @@
+# syntax=docker/dockerfile:experimental
+#############
+### build ###
+#############
+FROM python:3.9-slim@sha256:1ede942c7c6489e7e4b5b5687e7133d3f05afc35741bc95ee76ffa845e680abc as base
+
+FROM base as builder
+
+COPY requirements.txt ./requirements.txt
+RUN pip install -r ./requirements.txt
+
+############
+### prod ###
+############
+FROM base
+COPY --from=builder  /usr/local /usr/local
+
+RUN mkdir /app
+WORKDIR /app
+
+COPY lbopt lbopt
+
+ENTRYPOINT ["python", "-u", "-m", "lbopt.cli.daemon"]

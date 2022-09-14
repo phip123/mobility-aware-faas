@@ -1,0 +1,24 @@
+# syntax=docker/dockerfile:experimental
+#############
+### build ###
+#############
+FROM python:3.9-slim@sha256:69ed21ff1900a3bdb5727bf377a406e3a7bb5b6e3cdf6615bf10b734215371a0 as base
+
+FROM base as builder
+
+# install galileo dependencies
+COPY requirements.txt ./requirements.txt
+RUN pip install -r ./requirements.txt
+
+############
+### prod ###
+############
+FROM base
+COPY --from=builder  /usr/local /usr/local
+COPY --from=multiarch/qemu-user-static:x86_64-arm /usr/bin/qemu-* /usr/bin
+
+RUN mkdir /app
+WORKDIR /app
+COPY lbopt lbopt
+
+ENTRYPOINT ["python", "-u", "-m", "lbopt.cli.daemon"]
